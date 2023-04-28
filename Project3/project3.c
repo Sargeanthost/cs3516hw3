@@ -21,7 +21,7 @@ int TraceLevel = 1;                  // Trace level - set on command line
 ////////////////// NETWORK EMULATION CODE STARTS BELOW 
 //The code below emulates the layer 2 and below network environment:
 //  - emulates the tranmission and delivery (with no loss and no
-//    corruption) between two physically connected nodes
+//    corruption) between two physically connected0 nodes
 //  - calls the initializations routines rtinit0, etc., once before
 //    beginning emulation
 //
@@ -416,7 +416,7 @@ void   toLayer2( struct RoutePacket packet ) {
         return;
     }
     if (ConnectCosts[packet.sourceid][packet.destid] == INFINITY)  {
-        printf("WARNING: source and destination not connected, ignoring packet!\n");
+        printf("WARNING: source and destination not connected0, ignoring packet!\n");
         return;
     }
 
