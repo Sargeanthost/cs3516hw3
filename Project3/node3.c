@@ -31,12 +31,12 @@ void rtinit3() {
     neighbor3 = getNeighborCosts(NODE);
     for (int i = 0; i < MAX_NODES; i++) {
         for (int j = 0; j < MAX_NODES; j++) {
+            connected3[j] = neighbor3->NodeCosts[j];
             if (i == NODE) {
                 if (TraceLevel == 4) {
                     printf("Setting costs[%d][%d] to %d\n", NODE, j, neighbor3->NodeCosts[j]);
                 }
                 dt3.costs[NODE][j] = neighbor3->NodeCosts[j];
-                connected3[j] = neighbor3->NodeCosts[j];
             } else {
                 dt3.costs[i][j] = INFINITY;
             }
@@ -64,8 +64,7 @@ void rtinit3() {
 
 void rtupdate3(struct RoutePacket *rcvdpkt) {
     printf("At time %f rtupdate3 was called by a packet from node %d.\n", clocktime, rcvdpkt->sourceid);
-    printf("At time %f, node %d current distance vector: %d %d %d %d.\n", clocktime, NODE, dt3.costs[NODE][0],
-           dt3.costs[NODE][1], dt3.costs[NODE][2], dt3.costs[NODE][3]);
+
     int to_notify = 0;
     //the node the has updated its distances
     int const WORKING_NODE = rcvdpkt->sourceid;
@@ -100,8 +99,8 @@ void rtupdate3(struct RoutePacket *rcvdpkt) {
         }
         int old_value = dt3.costs[NODE][i];
         int new_value = min(dt3.costs[NODE][i],
-                        min(dt3.costs[NODE][first] + dt3.costs[first][i], dt3.costs[NODE][second] +
-                                                                          dt3.costs[second][i]));
+                            min(dt3.costs[NODE][first] + dt3.costs[first][i], dt3.costs[NODE][second] +
+                                                                              dt3.costs[second][i]));
         if (old_value != new_value) {
             to_notify = 1;
             dt3.costs[NODE][i] = new_value;
@@ -110,17 +109,26 @@ void rtupdate3(struct RoutePacket *rcvdpkt) {
 
     //if a vector from us changes value notify through layer2
     if (to_notify) {
+        printf("At time %f, node %d current distance vector: %d %d %d %d.\n", clocktime, NODE, dt3.costs[NODE][0],
+               dt3.costs[NODE][1], dt3.costs[NODE][2], dt3.costs[NODE][3]);
         for (int i = 0; i < MAX_NODES; i++) {
-            if (dt3.costs[NODE][i] != INFINITY && i != NODE) {
-                //send packet
-                struct RoutePacket *pkt = malloc(sizeof(struct RoutePacket));
-                pkt->sourceid = NODE;
-                pkt->destid = i;
-                memcpy(pkt->mincost, dt3.costs[NODE], sizeof(dt3.costs[NODE]));
-                printf("At time %f, node %d sends packet to node %d with: %d %d %d %d\n", clocktime, NODE, i,
-                       pkt->mincost[0], pkt->mincost[1], pkt->mincost[2], pkt->mincost[3]);
-                toLayer2(*pkt);
+            //dont notify ourselves
+            if (i == NODE) {
+                continue;
             }
+            //if we arent connected
+            if (connected3[i] == INFINITY) {
+                continue;
+            }
+            //send packet
+            struct RoutePacket *pkt = malloc(sizeof(struct RoutePacket));
+            pkt->sourceid = NODE;
+            pkt->destid = i;
+            memcpy(pkt->mincost, dt3.costs[NODE], sizeof(dt3.costs[NODE]));
+            printf("At time %f, node %d sends packet to node %d with: %d %d %d %d\n", clocktime, NODE, i,
+                   pkt->mincost[0], pkt->mincost[1], pkt->mincost[2], pkt->mincost[3]);
+            toLayer2(*pkt);
+
         }
     }
 }
