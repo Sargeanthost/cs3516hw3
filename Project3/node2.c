@@ -29,9 +29,9 @@ void rtinit2() {
     printf("At time %f rtinit2 was called.\n", clocktime);
     //init to infinite and then set our connected0 nodes values
     neighbor2 = getNeighborCosts(NODE);
+    memcpy(connected2, neighbor2->NodeCosts, sizeof(connected2));
     for (int i = 0; i < MAX_NODES; i++) {
         for (int j = 0; j < MAX_NODES; j++) {
-            connected2[j] = neighbor2->NodeCosts[j];
             if (i == NODE) {
                 if (TraceLevel == 4) {
                     printf("Setting costs[%d][%d] to %d\n", NODE, j, neighbor2->NodeCosts[j]);

@@ -31,9 +31,9 @@ void rtinit0() {
     printf("At time %f rtinit0 was called.\n", clocktime);
     //init to infinite and then set our connected0 nodes values
     neighbor0 = getNeighborCosts(NODE);
+    memcpy(connected0, neighbor0->NodeCosts, sizeof(connected0));
     for (int i = 0; i < MAX_NODES; i++) {
         for (int j = 0; j < MAX_NODES; j++) {
-            connected0[j] = neighbor0->NodesInNetwork;
             if (i == NODE) {
                 if (TraceLevel == 4) {
                     printf("Setting costs[%d][%d] to %d\n", NODE, j, neighbor0->NodeCosts[j]);
@@ -126,7 +126,6 @@ void rtupdate0(struct RoutePacket *rcvdpkt) {
             printf("At time %f, node %d sends packet to node %d with: %d %d %d %d\n", clocktime, NODE, i,
                    pkt->mincost[0], pkt->mincost[1], pkt->mincost[2], pkt->mincost[3]);
             toLayer2(*pkt);
-
         }
     }
 }
