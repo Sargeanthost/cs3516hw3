@@ -69,8 +69,7 @@ void rtupdate0(struct RoutePacket *rcvdpkt) {
     printf("At time %f, node %d current distance vector: %d %d %d %d.\n", clocktime, NODE, dt0.costs[NODE][0],
            dt0.costs[NODE][1], dt0.costs[NODE][2], dt0.costs[NODE][3]);
 
-    int old_value;
-    int new_value;
+    int to_notify = 0;
     //the node the has updated its distances
     int const WORKING_NODE = rcvdpkt->sourceid;
 
@@ -102,15 +101,18 @@ void rtupdate0(struct RoutePacket *rcvdpkt) {
             first = 1;
             second = 2;
         }
-        old_value = dt0.costs[NODE][i];
-        new_value = min(dt0.costs[NODE][i],
-                        min(dt0.costs[NODE][first] + dt0.costs[first][i], dt0.costs[NODE][second] +
-                                                                          dt0.costs[second][i]));
-        dt0.costs[NODE][i] = new_value;
+        int old_value = dt0.costs[NODE][i];
+        int new_value = min(dt0.costs[NODE][i],
+                            min(dt0.costs[NODE][first] + dt0.costs[first][i], dt0.costs[NODE][second] +
+                                                                              dt0.costs[second][i]));
+        if (old_value != new_value) {
+            to_notify = 1;
+            dt0.costs[NODE][i] = new_value;
+        }
     }
 
     //if a vector from us changes value notify through layer2
-    if (old_value != new_value) {
+    if (to_notify) {
         for (int i = 0; i < MAX_NODES; i++) {
             if (connected0[i] < INFINITY && i != NODE) {
                 //send packet to directly connected0 nodes
