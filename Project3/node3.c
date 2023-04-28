@@ -2,22 +2,23 @@
 #include <stdlib.h>
 #include <string.h>
 #include "project3.h"
+
 #define NODE 3
 
 extern int TraceLevel;
 extern float clocktime;
 
 struct distance_table {
-  int costs[MAX_NODES][MAX_NODES];
+    int costs[MAX_NODES][MAX_NODES];
 };
 
 //1 if connected0, 0 if not connected0. determined on init
 int connected3[MAX_NODES];
 
 struct distance_table dt3;
-struct NeighborCosts   *neighbor3;
+struct NeighborCosts *neighbor3;
 
-void printdt3(int, struct NeighborCosts*, struct distance_table*);
+void printdt3(int, struct NeighborCosts *, struct distance_table *);
 
 //returns a iff a is less than b and vice versa. equality returns b
 int min(int, int);
@@ -30,9 +31,9 @@ void rtinit3() {
     neighbor3 = getNeighborCosts(NODE);
     for (int i = 0; i < MAX_NODES; i++) {
         for (int j = 0; j < MAX_NODES; j++) {
-            if(i == NODE){
-                if(TraceLevel == 4){
-                    printf("Setting costs[%d][%d] to %d\n", NODE,j,neighbor3->NodeCosts[j]);
+            if (i == NODE) {
+                if (TraceLevel == 4) {
+                    printf("Setting costs[%d][%d] to %d\n", NODE, j, neighbor3->NodeCosts[j]);
                 }
                 dt3.costs[NODE][j] = neighbor3->NodeCosts[j];
                 connected3[j] = neighbor3->NodeCosts[j];
@@ -47,23 +48,23 @@ void rtinit3() {
 
     // let our connected0 nodes our values by sending to layer 2
     for (int i = 0; i < MAX_NODES; i++) {
-        if(connected3[i] < INFINITY && i != NODE){
+        if (connected3[i] < INFINITY && i != NODE) {
             //send packet
             struct RoutePacket *pkt = malloc(sizeof(struct RoutePacket));
             pkt->sourceid = NODE;
             pkt->destid = i;
             //copy the NODE connected0 array
             memcpy(pkt->mincost, dt3.costs[NODE], sizeof(dt3.costs[NODE]));
-            printf("At time %f, node %d sends packet to node %d with: %d %d %d %d\n", clocktime, NODE, i, pkt->mincost[0],pkt->mincost[1],pkt->mincost[2],pkt->mincost[3]);
+            printf("At time %f, node %d sends packet to node %d with: %d %d %d %d\n", clocktime, NODE, i,
+                   pkt->mincost[0], pkt->mincost[1], pkt->mincost[2], pkt->mincost[3]);
             toLayer2(*pkt);
         }
     }
 }
 
-
-void rtupdate3( struct RoutePacket *rcvdpkt ) {
+void rtupdate3(struct RoutePacket *rcvdpkt) {
     printf("At time %f rtupdate3 was called by a packet from node %d.\n", clocktime, rcvdpkt->sourceid);
-    printf("At time %f, node %d current distance vector: %d %d %d %d.\n", clocktime, dt3.costs[NODE][0],
+    printf("At time %f, node %d current distance vector: %d %d %d %d.\n", clocktime, NODE, dt3.costs[NODE][0],
            dt3.costs[NODE][1], dt3.costs[NODE][2], dt3.costs[NODE][3]);
     int old_value;
     int new_value;
@@ -139,34 +140,34 @@ void rtupdate3( struct RoutePacket *rcvdpkt ) {
 //                 constantly updated as the node gets new
 //                 messages from other nodes.
 /////////////////////////////////////////////////////////////////////
-void printdt3( int MyNodeNumber, struct NeighborCosts *neighbor, 
-		struct distance_table *dtptr ) {
-    int       i, j;
-    int       TotalNodes = neighbor->NodesInNetwork;     // Total nodes in network
-    int       NumberOfNeighbors = 0;                     // How many neighbors
-    int       Neighbors[MAX_NODES];                      // Who are the neighbors
+void printdt3(int MyNodeNumber, struct NeighborCosts *neighbor,
+              struct distance_table *dtptr) {
+    int i, j;
+    int TotalNodes = neighbor->NodesInNetwork;     // Total nodes in network
+    int NumberOfNeighbors = 0;                     // How many neighbors
+    int Neighbors[MAX_NODES];                      // Who are the neighbors
 
     // Determine our neighbors 
-    for ( i = 0; i < TotalNodes; i++ )  {
-        if (( neighbor->NodeCosts[i] != INFINITY ) && i != MyNodeNumber )  {
+    for (i = 0; i < TotalNodes; i++) {
+        if ((neighbor->NodeCosts[i] != INFINITY) && i != MyNodeNumber) {
             Neighbors[NumberOfNeighbors] = i;
             NumberOfNeighbors++;
         }
     }
     // Print the header
     printf("                via     \n");
-    printf("   D%d |", MyNodeNumber );
-    for ( i = 0; i < NumberOfNeighbors; i++ )
+    printf("   D%d |", MyNodeNumber);
+    for (i = 0; i < NumberOfNeighbors; i++)
         printf("     %d", Neighbors[i]);
     printf("\n");
     printf("  ----|-------------------------------\n");
 
     // For each node, print the cost by travelling thru each of our neighbors
-    for ( i = 0; i < TotalNodes; i++ )   {
-        if ( i != MyNodeNumber )  {
-            printf("dest %d|", i );
-            for ( j = 0; j < NumberOfNeighbors; j++ )  {
-                    printf( "  %4d", dtptr->costs[i][Neighbors[j]] );
+    for (i = 0; i < TotalNodes; i++) {
+        if (i != MyNodeNumber) {
+            printf("dest %d|", i);
+            for (j = 0; j < NumberOfNeighbors; j++) {
+                printf("  %4d", dtptr->costs[i][Neighbors[j]]);
             }
             printf("\n");
         }

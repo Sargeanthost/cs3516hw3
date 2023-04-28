@@ -55,7 +55,8 @@ void rtinit0() {
             pkt->sourceid = NODE;
             pkt->destid = i;
             memcpy(pkt->mincost, dt0.costs[NODE], sizeof(dt0.costs[NODE]));
-            printf("At time %f, node %d sends packet to node %d with: %d %d %d %d\n", clocktime, NODE, i, pkt->mincost[0],
+            printf("At time %f, node %d sends packet to node %d with: %d %d %d %d\n", clocktime, NODE, i,
+                   pkt->mincost[0],
                    pkt->mincost[1], pkt->mincost[2], pkt->mincost[3]);
             toLayer2(*pkt);
         }
@@ -65,7 +66,7 @@ void rtinit0() {
 
 void rtupdate0(struct RoutePacket *rcvdpkt) {
     printf("At time %f, rtupdate0 was called by a packet from node %d.\n", clocktime, rcvdpkt->sourceid);
-    printf("At time %f, node %d current distance vector: %d %d %d %d.\n", clocktime, dt0.costs[NODE][0],
+    printf("At time %f, node %d current distance vector: %d %d %d %d.\n", clocktime, NODE, dt0.costs[NODE][0],
            dt0.costs[NODE][1], dt0.costs[NODE][2], dt0.costs[NODE][3]);
 
     int old_value;

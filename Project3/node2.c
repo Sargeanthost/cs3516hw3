@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "project3.h"
+
 #define NODE 2
 
 extern int TraceLevel;
@@ -17,7 +18,7 @@ int connected2[MAX_NODES];
 struct distance_table dt2;
 struct NeighborCosts *neighbor2;
 
-void printdt2(int, struct NeighborCosts*, struct distance_table*);
+void printdt2(int, struct NeighborCosts *, struct distance_table *);
 
 //returns a iff a is less than b and vice versa. equality returns b
 int min(int, int);
@@ -30,9 +31,9 @@ void rtinit2() {
     neighbor2 = getNeighborCosts(NODE);
     for (int i = 0; i < MAX_NODES; i++) {
         for (int j = 0; j < MAX_NODES; j++) {
-            if(i == NODE){
-                if(TraceLevel == 4){
-                    printf("Setting costs[%d][%d] to %d\n", NODE,j,neighbor2->NodeCosts[j]);
+            if (i == NODE) {
+                if (TraceLevel == 4) {
+                    printf("Setting costs[%d][%d] to %d\n", NODE, j, neighbor2->NodeCosts[j]);
                 }
                 dt2.costs[NODE][j] = neighbor2->NodeCosts[j];
                 connected2[j] = neighbor2->NodeCosts[j];
@@ -44,22 +45,22 @@ void rtinit2() {
 
     // let our connected0 nodes our values by sending to layer 2
     for (int i = 0; i < MAX_NODES; i++) {
-        if(dt2.costs[NODE][i] != INFINITY && i != NODE){
+        if (dt2.costs[NODE][i] != INFINITY && i != NODE) {
             //send packet
             struct RoutePacket *pkt = malloc(sizeof(struct RoutePacket));
             pkt->sourceid = NODE;
             pkt->destid = i;
             memcpy(pkt->mincost, dt2.costs[NODE], sizeof(dt2.costs[NODE]));
-            printf("At time %f, node %d sends packet to node %d with: %d %d %d %d\n", clocktime, NODE, i, pkt->mincost[0],pkt->mincost[1],pkt->mincost[2],pkt->mincost[3]);
+            printf("At time %f, node %d sends packet to node %d with: %d %d %d %d\n", clocktime, NODE, i,
+                   pkt->mincost[0], pkt->mincost[1], pkt->mincost[2], pkt->mincost[3]);
             toLayer2(*pkt);
         }
     }
 }
 
-
 void rtupdate2(struct RoutePacket *rcvdpkt) {
     printf("At time %f rtupdate2 was called by a packet from node %d.\n", clocktime, rcvdpkt->sourceid);
-    printf("At time %f, node %d current distance vector: %d %d %d %d.\n", clocktime, dt2.costs[NODE][0],
+    printf("At time %f, node %d current distance vector: %d %d %d %d.\n", clocktime, NODE, dt2.costs[NODE][0],
            dt2.costs[NODE][1], dt2.costs[NODE][2], dt2.costs[NODE][3]);
     int old_value;
     int new_value;
@@ -101,19 +102,17 @@ void rtupdate2(struct RoutePacket *rcvdpkt) {
         dt2.costs[NODE][i] = new_value;
     }
 
-    printf("At time %f, node %d initial distance vector: %d %d %d %d\n", clocktime, NODE, dt2.costs[NODE][0],
-           dt2.costs[NODE][1], dt2.costs[NODE][2], dt2.costs[NODE][3]);
-
     //if a vector from us changes value notify through layer2
     if (old_value != new_value) {
         for (int i = 0; i < MAX_NODES; i++) {
-            if (connected2[i] < INFINITY&& i != NODE) {
+            if (connected2[i] < INFINITY && i != NODE) {
                 //send packet
                 struct RoutePacket *pkt = malloc(sizeof(struct RoutePacket));
                 pkt->sourceid = NODE;
                 pkt->destid = i;
                 memcpy(pkt->mincost, dt2.costs[NODE], sizeof(dt2.costs[NODE]));
-                printf("At time %f, node %d sends packet to node %d with: %d %d %d %d\n", clocktime, NODE, i, pkt->mincost[0],pkt->mincost[1],pkt->mincost[2],pkt->mincost[3]);
+                printf("At time %f, node %d sends packet to node %d with: %d %d %d %d\n", clocktime, NODE, i,
+                       pkt->mincost[0], pkt->mincost[1], pkt->mincost[2], pkt->mincost[3]);
                 toLayer2(*pkt);
             }
         }
