@@ -112,15 +112,11 @@ void rtupdate3(struct RoutePacket *rcvdpkt) {
         printf("At time %f, node %d current distance vector: %d %d %d %d.\n", clocktime, NODE, dt3.costs[NODE][0],
                dt3.costs[NODE][1], dt3.costs[NODE][2], dt3.costs[NODE][3]);
         for (int i = 0; i < MAX_NODES; i++) {
-            //dont notify ourselves
-            if (i == NODE) {
+            //dont notify ourselves or non neighbors
+            if (i == NODE || connected3[i] == INFINITY) {
                 continue;
             }
-            //if we arent connected
-            if (connected3[i] == INFINITY) {
-                continue;
-            }
-            //send packet
+
             struct RoutePacket *pkt = malloc(sizeof(struct RoutePacket));
             pkt->sourceid = NODE;
             pkt->destid = i;
