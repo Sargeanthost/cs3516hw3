@@ -15,6 +15,8 @@ struct NeighborCosts *neighbor2;
 
 void printdt2(int, struct NeighborCosts*, struct distance_table*);
 
+//returns a iff a is less than b and vice versa. equality returns b
+int min(int, int);
 
 /* students to write the following two routines, and maybe some others */
 
@@ -50,8 +52,67 @@ void rtinit2() {
 
 
 void rtupdate2(struct RoutePacket *rcvdpkt) {
-    printf("At time %f rtupdate2 was called.\n", clocktime);
-    printf("Sender is %d\n", rcvdpkt->sourceid);
+    printf("At time %f rtupdate0 was called.\n", clocktime);
+    printf("At time %f node %d received a packet from %d\n", clocktime, NODE, rcvdpkt->sourceid);
+
+    int old_value;
+    int new_value;
+    //the node the has updated its distances
+    int const WORKING_NODE = rcvdpkt->sourceid;
+
+    //First step is to set our tracker array of the working node's array
+    for (int i = 0; i < MAX_NODES; ++i) {
+        dt2.costs[WORKING_NODE][i] = rcvdpkt->mincost[i];
+    }
+    //second and third step is to check if there is a difference in what our weights while using the BF alg.
+    //for N=0 & WN=2: cost(NODE,WORKING_NODE) = min(cost(NODE,WORKING_NODE)=3,
+    //                                          cost(NODE,1)=1 + cost(1,WORKING_NODE)=1,
+    //                                          cost(NODE,3)=7 + cost(3,WORKING_NODE)=2)
+    //the left hand side has working_node change base on i.
+    for (int i = 0; i < MAX_NODES; ++i) {
+        //cost to get to itself will never change so just skip
+        if (i == NODE) {
+            continue;
+        }
+        //really not sure how to do this better, so just hardcoding
+        int first;
+        int second;
+        if (i == 0) {
+            first = 1;
+            second = 3;
+        } else if (i == 1) {
+            first = 0;
+            second = 3;
+        } else {
+            //3
+            first = 0;
+            second = 1;
+        }
+        old_value = dt2.costs[NODE][i];
+        new_value = min(dt2.costs[NODE][i],
+                        min(dt2.costs[NODE][first] + dt2.costs[first][i], dt2.costs[NODE][second] +
+                                                                          dt2.costs[second][i]));
+        dt2.costs[NODE][i] = new_value;
+    }
+
+    //if a vector from us changes value notify through layer2
+    if (old_value != new_value) {
+        for (int i = 0; i < MAX_NODES; ++i) {
+            if (dt2.costs[NODE][i] != INFINITY && i != NODE) {
+                //send packet
+                struct RoutePacket *pkt = malloc(sizeof(struct RoutePacket));
+                pkt->sourceid = NODE;
+                pkt->destid = i;
+                memcpy(pkt->mincost, dt2.costs[NODE], sizeof(dt2.costs[NODE]));
+                printf("At time %f node %d is sending an updated cost array to node %d\n", clocktime, NODE, i);
+                if (TraceLevel == 4) {
+                    printf("Contents of node %d's min cost array are: [%d, %d, %d, %d]\n", NODE, dt2.costs[NODE][0],
+                           dt2.costs[NODE][1], dt2.costs[NODE][2], dt2.costs[NODE][3]);
+                }
+                toLayer2(*pkt);
+            }
+        }
+    }
 }
 
 

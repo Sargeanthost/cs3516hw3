@@ -6,7 +6,7 @@
 #define NODE 1
 
 extern int TraceLevel;
-extern int clocktime;
+extern float clocktime;
 
 struct distance_table {
     int costs[MAX_NODES][MAX_NODES];
@@ -14,8 +14,10 @@ struct distance_table {
 struct distance_table dt1;
 struct NeighborCosts *neighbor1;
 
-void printdt1(int, struct NeighborCosts*, struct distance_table*);
+void printdt1(int, struct NeighborCosts *, struct distance_table *);
 
+//returns a iff a is less than b and vice versa. equality returns b
+int min(int, int);
 
 /* students to write the following two routines, and maybe some others */
 
@@ -25,9 +27,9 @@ void rtinit1() {
     neighbor1 = getNeighborCosts(NODE);
     for (int i = 0; i < MAX_NODES; ++i) {
         for (int j = 0; j < MAX_NODES; ++j) {
-            if(i == NODE){
-                if(TraceLevel == 4){
-                    printf("Setting costs[%d][%d] to %d\n", NODE,j,neighbor1->NodeCosts[j]);
+            if (i == NODE) {
+                if (TraceLevel == 4) {
+                    printf("Setting costs[%d][%d] to %d\n", NODE, j, neighbor1->NodeCosts[j]);
                 }
                 dt1.costs[NODE][j] = neighbor1->NodeCosts[j];
             } else {
@@ -38,7 +40,7 @@ void rtinit1() {
 
     // let our connected nodes our values by sending to layer 2
     for (int i = 0; i < MAX_NODES; ++i) {
-        if(dt1.costs[NODE][i] != INFINITY && i != NODE){
+        if (dt1.costs[NODE][i] != INFINITY && i != NODE) {
             //send packet
             struct RoutePacket *pkt = malloc(sizeof(struct RoutePacket));
             pkt->sourceid = NODE;
@@ -51,8 +53,67 @@ void rtinit1() {
 
 
 void rtupdate1(struct RoutePacket *rcvdpkt) {
-    printf("At time %f rtupdate1 was called.\n", clocktime);
-    printf("Sender is %d\n", rcvdpkt->sourceid);
+    printf("At time %f rtupdate0 was called.\n", clocktime);
+    printf("At time %f node %d received a packet from %d\n", clocktime, NODE, rcvdpkt->sourceid);
+
+    int old_value;
+    int new_value;
+    //the node the has updated its distances
+    int const WORKING_NODE = rcvdpkt->sourceid;
+
+    //First step is to set our tracker array of the working node's array
+    for (int i = 0; i < MAX_NODES; ++i) {
+        dt1.costs[WORKING_NODE][i] = rcvdpkt->mincost[i];
+    }
+    //second and third step is to check if there is a difference in what our weights while using the BF alg.
+    //for N=0 & WN=2: cost(NODE,WORKING_NODE) = min(cost(NODE,WORKING_NODE)=3,
+    //                                          cost(NODE,1)=1 + cost(1,WORKING_NODE)=1,
+    //                                          cost(NODE,3)=7 + cost(3,WORKING_NODE)=2)
+    //the left hand side has working_node change.
+    for (int i = 0; i < MAX_NODES; ++i) {
+        //cost to get to itself will never change so just skip
+        if (i == NODE) {
+            continue;
+        }
+        //really not sure how to do this better, so just hardcoding
+        int first;
+        int second;
+        if (i == 0) {
+            first = 2;
+            second = 3;
+        } else if (i == 2) {
+            first = 0;
+            second = 3;
+        } else {
+            //3
+            first = 0;
+            second = 2;
+        }
+        old_value = dt1.costs[NODE][i];
+        new_value = min(dt1.costs[NODE][i],
+                        min(dt1.costs[NODE][first] + dt1.costs[first][i], dt1.costs[NODE][second] +
+                                                                          dt1.costs[second][i]));
+        dt1.costs[NODE][i] = new_value;
+    }
+
+    //if a vector from us changes value notify through layer2
+    if (old_value != new_value) {
+        for (int i = 0; i < MAX_NODES; ++i) {
+            if (dt1.costs[NODE][i] != INFINITY && i != NODE) {
+                //send packet
+                struct RoutePacket *pkt = malloc(sizeof(struct RoutePacket));
+                pkt->sourceid = NODE;
+                pkt->destid = i;
+                memcpy(pkt->mincost, dt1.costs[NODE], sizeof(dt1.costs[NODE]));
+                printf("At time %f node %d is sending an updated cost array to node %d\n", clocktime, NODE, i);
+                if (TraceLevel == 4) {
+                    printf("Contents of node %d's min cost array are: [%d, %d, %d, %d]\n", NODE, dt1.costs[NODE][0],
+                         dt1.costs[NODE][1], dt1.costs[NODE][2], dt1.costs[NODE][3]);
+                }
+                toLayer2(*pkt);
+            }
+        }
+    }
 }
 
 
